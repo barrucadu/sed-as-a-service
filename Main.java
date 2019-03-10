@@ -24,11 +24,22 @@ public class Main {
         public void handle(HttpExchange t) throws IOException {
             String method = t.getRequestMethod().toLowerCase();
             String uri = t.getRequestURI().getPath().toLowerCase();
-            String response = "method: '" + method + "', uri: '" + uri + "'";
-            System.out.println(response);
-
-            t.sendResponseHeaders(200, response.length());
             OutputStream os = t.getResponseBody();
+
+            System.out.println("method: '" + method + "', uri: '" + uri + "'");
+
+            int code = 400;
+            String response = "Bad request";
+
+            if (method.equals("post")) {
+                code = 404;
+                response = "Not found";
+            } else if (method.equals("put")) {
+                code = 404;
+                response = "Not found";
+           }
+
+            t.sendResponseHeaders(code, response.length());
             os.write(response.getBytes());
             os.close();
         }
