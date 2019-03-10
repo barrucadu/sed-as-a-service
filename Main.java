@@ -28,29 +28,44 @@ public class Main {
         public void handle(HttpExchange t) throws IOException {
             String method = t.getRequestMethod().toLowerCase();
             String unixUtility = t.getRequestURI().getPath().toLowerCase().substring(1);
-            OutputStream os = t.getResponseBody();
 
             System.out.println("method: '" + method + "', unix utility: '" + unixUtility + "'");
 
-            int code = 400;
-            String response = "Bad request";
-
-            UnixUtilityBuilderFactoryRegistrySingleton registry = UnixUtilityBuilderFactoryRegistrySingleton.getInstance();
-
             if (method.equals("post")) {
-                Optional<UnixUtilityBuilderFactory> builderFactory = registry.retrieve(unixUtility);
-                if (builderFactory.isPresent()) {
-                    code = 501;
-                    response = "Not implemented";
-                } else {
-                    code = 404;
-                    response = "Not found";
-                }
+                handlePOST(t, unixUtility);
             } else if (method.equals("put")) {
-                code = 404;
-                response = "Not found";
-           }
+                handlePUT(t, unixUtility);
+           } else {
+                respond(t, 400, "Bad request");
+            }
+        }
 
+        private void handlePOST(HttpExchange t, String unixUtility) throws IOException {
+            UnixUtilityBuilderFactoryRegistrySingleton registry =
+                UnixUtilityBuilderFactoryRegistrySingleton.getInstance();
+            Optional<UnixUtilityBuilderFactory> builderFactory =
+                registry.retrieve(unixUtility);
+
+            if (builderFactory.isPresent()) {
+                respond(t, 501, "Not implemented");
+            } else {
+                respond(t, 404, "Not found");
+            }
+        }
+
+        private void handlePUT(HttpExchange t, String unixUtility) throws IOException {
+            UnixUtilityBuilderFactoryFactorySingleton factory =
+                UnixUtilityBuilderFactoryFactorySingleton.getInstance();
+            UnixUtilityBuilderFactoryRegistrySingleton registry =
+                UnixUtilityBuilderFactoryRegistrySingleton.getInstance();
+
+            registry.register(unixUtility, factory.construct(unixUtility));
+
+            respond(t, 201, "Created");
+        }
+
+        private void respond(HttpExchange t, int code, String response) throws IOException {
+            OutputStream os = t.getResponseBody();
             t.sendResponseHeaders(code, response.length());
             os.write(response.getBytes());
             os.close();
