@@ -9,6 +9,9 @@ public class Main {
     public static void main(String[] args) {
         int port = Integer.parseInt(System.getenv("PORT"));
 
+        UnixUtilityBuilderFactory sedBuilderFactory = UnixUtilityBuilderFactoryFactorySingleton.getInstance().construct("sed");
+        UnixUtilityBuilderFactoryRegistrySingleton.getInstance().register("sed", sedBuilderFactory);
+
         try {
             HttpServer server = HttpServer.create(new InetSocketAddress(port), 1024);
             server.createContext("/", new UnixUtilityAsAServiceServer());
