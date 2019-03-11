@@ -8,11 +8,6 @@ public class UnixUtilityBuilderFactoryFactorySingleton {
     }
 
     public UnixUtilityBuilderFactory construct(String unixUtility) {
-        return new UUBuilderFactory(unixUtility);
-    }
-
-    private class UUBuilderFactory implements UnixUtilityBuilderFactory {
-        public UUBuilderFactory(String unixUtility) {
-        }
+        return new UnixUtilityBuilderFactoryImpl(unixUtility);
     }
 }

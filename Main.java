@@ -5,6 +5,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.Optional;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 public class Main {
     public static void main(String[] args) {
@@ -47,10 +51,38 @@ public class Main {
                 registry.retrieve(unixUtility);
 
             if (builderFactory.isPresent()) {
-                respond(t, 501, "Not implemented");
+                try {
+                    Document doc = DocumentBuilderFactory
+                        .newInstance()
+                        .newDocumentBuilder()
+                        .parse(t.getRequestBody());
+
+                    UnixUtility uu = buildProcessByXMLSpecification(builderFactory.get(), doc);
+                    String stdout = uu.execute();
+                    respond(t, 200, stdout);
+                } catch (Exception e) {
+                    e.printStackTrace(System.out);
+                    respond(t, 500, "Internal server error");
+                }
             } else {
                 respond(t, 404, "Not found");
             }
+        }
+
+        private UnixUtility buildProcessByXMLSpecification(UnixUtilityBuilderFactory builderFactory, Document doc) {
+            UnixUtilityBuilder builder = builderFactory.construct();
+
+            NodeList args = doc.getElementsByTagName("argument");
+            for (int i = 0; i < args.getLength(); i++) {
+                builder.addArgument(((Element) args.item(i)).getTextContent());
+            }
+
+            NodeList in = doc.getElementsByTagName("stdin");
+            for (int i = 0; i < in.getLength(); i++) {
+                builder.addLineOfInput(((Element) in.item(i)).getTextContent());
+            }
+
+            return builder.build();
         }
 
         private void handlePUT(HttpExchange t, String unixUtility) throws IOException {
